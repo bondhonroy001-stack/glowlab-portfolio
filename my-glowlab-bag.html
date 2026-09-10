@@ -242,9 +242,11 @@
   }
 
   .checkout-btn {
+    display: block;
     width: 100%;
     margin-top: var(--space-roomy);
     min-height: 48px;
+    box-sizing: border-box;
     padding: var(--space-comfortable);
     border: none;
     border-radius: var(--radius-full);
@@ -253,6 +255,8 @@
     font-family: var(--font-body);
     font-weight: var(--weight-semibold);
     font-size: var(--type-base);
+    text-align: center;
+    text-decoration: none;
     cursor: pointer;
     transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
   }
@@ -364,8 +368,7 @@
         <span>Total</span>
         <span id="totalValue">$0</span>
       </div>
-      <button class="checkout-btn" id="checkoutBtn">Proceed to Checkout</button>
-      <div class="checkout-note">Checkout isn't built yet — this is as far as the flow goes for now.</div>
+      <a class="checkout-btn" id="checkoutBtn" href="my-glowlab-checkout.html">Proceed to Checkout</a>
     </div>
   </div>
 
@@ -509,10 +512,6 @@
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => toast.classList.remove('visible'), 2400);
   }
-
-  document.getElementById('checkoutBtn').addEventListener('click', () => {
-    showToast("Checkout isn't built yet — coming in a later step.");
-  });
 
   render();
 </script>
