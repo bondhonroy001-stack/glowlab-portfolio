@@ -51,8 +51,18 @@
     background: var(--color-brand-ink);
     color: var(--color-text-primary-inverse);
     font-family: var(--font-body);
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* main.stage assumes a tall viewport to center its content without
+     clipping. On a short viewport (crowded browser chrome eating
+     vertical space, a small laptop window) the fixed-height hero used
+     to clip the top of the product photo instead of letting it scroll
+     into view — min-height + overflow-y:auto above keeps the full-bleed
+     look on a normal screen but adds a scroll escape hatch here. */
+  main.stage {
+    min-height: 100vh;
   }
 
   /* ===== Loading state — shown first so the abandon risk named in ia-map.md (step 1) has something to look at, not a blank screen ===== */
