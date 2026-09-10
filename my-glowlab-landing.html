@@ -107,10 +107,11 @@
   /* ===== Scene: a real perspective container, so the product's 3D rotation has actual depth instead of a flat CSS trick ===== */
   .scene {
     position: relative;
-    height: 100vh;
+    min-height: 100vh;
     width: 100vw;
     perspective: 1400px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .grain {
