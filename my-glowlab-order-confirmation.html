@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlowLab — Order Confirmed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  /* ===== Tokens — SHOP surface context, same as the rest of the flow ===== */
+  :root {
+    --color-brand-ink: #17151A;
+    --color-brand-accent: #C88FA4;
+    --color-brand-accent-2: #D6B98C;
+    --color-accent-text: #9C5C74;
+    --color-surface-shop: #FBF7F5;
+    --color-surface-card: #FFFFFF;
+    --color-text-primary: #1D1620;
+    --color-text-primary-inverse: #FDFBFA;
+    --color-text-muted: #6E6470;
+    --color-line: #E6DEE2;
+    --color-error: #B0392F;
+    --color-success: #2F8A5B;
+
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --type-section: clamp(26px, 3.5vw, 34px);
+    --type-base: 16px;
+    --type-small: 14px;
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+    --line-normal: 1.5;
+    --line-relaxed: 1.7;
+
+    --space-tight: 4px;
+    --space-compact: 8px;
+    --space-comfortable: 16px;
+    --space-default: 24px;
+    --space-roomy: 32px;
+    --space-section: 48px;
+
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 28px;
+    --radius-full: 999px;
+
+    --motion-fast: 120ms;
+    --motion-default: 250ms;
+    --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Dark mode — token architecture was already semantic (no raw hex in
+     component rules), so this is the only block needed to support it.
+     Added post-review: this screen previously had no override at all. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-surface-shop: #17151A;
+      --color-surface-card: #221B26;
+      --color-text-primary: #F3EDF0;
+      --color-text-muted: #A79AA8;
+      --color-line: #362B3A;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--color-surface-shop);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  header.top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-comfortable) var(--space-default);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    font-size: 18px;
+    letter-spacing: 0.04em;
+  }
+
+  main.confirm-main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: var(--space-section) var(--space-default);
+  }
+
+  /* ===== Primary: confirmation message + order number ===== */
+  .confirm-header {
+    text-align: center;
+    margin-bottom: var(--space-section);
+  }
+  .check-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-success);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin: 0 auto var(--space-comfortable);
+  }
+  .confirm-header h1 {
+    font-family: var(--font-display);
+    font-size: var(--type-section);
+    font-weight: var(--weight-semibold);
+  }
+  .confirm-header p {
+    font-size: var(--type-small);
+    color: var(--color-text-muted);
+    margin-top: var(--space-tight);
+  }
+  .order-number {
+    display: inline-block;
+    margin-top: var(--space-comfortable);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-full);
+    padding: var(--space-compact) var(--space-comfortable);
+  }
+
+  .card {
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-roomy) var(--space-default);
+    margin-bottom: var(--space-default);
+  }
+  .card h2 {
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-accent-text);
+    margin-bottom: var(--space-comfortable);
+    font-family: var(--font-mono);
+    font-weight: var(--weight-regular);
+  }
+
+  /* ===== Secondary: order summary, confirmed shade shown per item ===== */
+  .confirm-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-comfortable);
+    padding: var(--space-compact) 0;
+  }
+  .confirm-item + .confirm-item { border-top: 1px solid var(--color-line); }
+  .confirm-item .swatch { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
+  .confirm-item .swatch.none { background: var(--color-surface-shop); border: 1px dashed var(--color-line); }
+  .confirm-item .meta { flex: 1; font-size: var(--type-small); }
+  .confirm-item .pname { font-weight: var(--weight-medium); }
+  .confirm-item .pshade { color: var(--color-text-muted); font-size: 12px; }
+  .confirm-item .price { font-size: var(--type-small); font-weight: var(--weight-medium); }
+
+  .totals-row { display: flex; justify-content: space-between; font-size: var(--type-small); color: var(--color-text-muted); margin-top: var(--space-comfortable); }
+  .totals-row.grand { font-size: var(--type-base); color: var(--color-text-primary); font-weight: var(--weight-semibold); margin-top: var(--space-comfortable); padding-top: var(--space-comfortable); border-top: 1px solid var(--color-line); }
+
+  /* Delivery expectation — the one thing this whole screen exists to answer
+     besides "did it go through": when does it arrive, and where. */
+  .delivery-row { display: flex; justify-content: space-between; font-size: var(--type-small); padding: var(--space-compact) 0; }
+  .delivery-row span:first-child { color: var(--color-text-muted); }
+  .delivery-row span:last-child { font-weight: var(--weight-medium); text-align: right; }
+
+  .continue-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+    min-height: 48px;
+    line-height: 48px;
+    border-radius: var(--radius-full);
+    background: var(--color-brand-accent);
+    color: var(--color-brand-ink);
+    font-weight: var(--weight-semibold);
+    font-size: var(--type-base);
+  }
+  .continue-btn:hover { opacity: 0.92; }
+
+  .confirm-footnote {
+    margin-top: var(--space-default);
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    line-height: var(--line-relaxed);
+  }
+
+  /* ===== No-order fallback — reached directly, not via a real checkout ===== */
+  .no-order {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-compact);
+    padding: var(--space-section) 0;
+  }
+  .no-order.visible { display: flex; }
+  .no-order h2 { font-family: var(--font-display); font-size: 22px; font-weight: var(--weight-semibold); }
+  .no-order p { font-size: var(--type-small); color: var(--color-text-muted); max-width: 320px; }
+
+  .confirm-content.hidden { display: none; }
+
+  @media (max-width: 480px) {
+    main.confirm-main { padding: var(--space-roomy) var(--space-comfortable); }
+  }
+</style>
+</head>
+<body>
+
+<header class="top-nav">
+  <div class="wordmark">GLOWLAB</div>
+</header>
+
+<main class="confirm-main">
+  <div class="confirm-content" id="confirmContent">
+    <div class="confirm-header">
+      <div class="check-badge">✓</div>
+      <h1>Order confirmed</h1>
+      <p id="confirmSub">Thank you — your shade is on its way.</p>
+      <div class="order-number" id="orderNumber">GL-000000</div>
+    </div>
+
+    <div class="card">
+      <h2>Your shades</h2>
+      <div id="confirmItems"></div>
+      <div class="totals-row"><span>Subtotal</span><span id="subtotalOut">$0</span></div>
+      <div class="totals-row"><span>Shipping</span><span id="shippingOut">$0</span></div>
+      <div class="totals-row grand"><span>Total paid</span><span id="totalOut">$0</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Delivery</h2>
+      <div class="delivery-row"><span>Shipping to</span><span id="deliveryCountry">—</span></div>
+      <div class="delivery-row"><span>Estimated arrival</span><span id="deliveryWindow">—</span></div>
+      <div class="delivery-row"><span>Confirmation sent to</span><span id="deliveryEmail">—</span></div>
+    </div>
+
+    <a class="continue-btn" href="my-glowlab-category.html">Continue Shopping</a>
+    <p class="confirm-footnote">This is a portfolio build — no real order was placed and no email was actually sent.</p>
+  </div>
+
+  <div class="no-order" id="noOrder">
+    <h2>No recent order found</h2>
+    <p>This screen shows up right after placing an order — nothing's been placed yet in this session.</p>
+    <a class="continue-btn" href="my-glowlab-category.html" style="margin-top:16px;">Start Shopping</a>
+  </div>
+</main>
+
+<script>
+  function getLastOrder() {
+    try { return JSON.parse(localStorage.getItem('glowlab_last_order')); } catch (e) { return null; }
+  }
+
+  // Delivery window follows the same shipping tier resolved at checkout:
+  // the $0/$6 tier was the fast domestic (US) rate, the higher flat fees
+  // were the slower international ones.
+  function deliveryWindowFor(shippingFee) {
+    if (shippingFee <= 6) return '3–5 business days';
+    if (shippingFee <= 12) return '7–10 business days';
+    return '10–14 business days';
+  }
+
+  const order = getLastOrder();
+  const contentEl = document.getElementById('confirmContent');
+  const noOrderEl = document.getElementById('noOrder');
+
+  if (!order || !order.items || order.items.length === 0) {
+    contentEl.classList.add('hidden');
+    noOrderEl.classList.add('visible');
+  } else {
+    document.getElementById('orderNumber').textContent = order.orderNumber;
+    document.getElementById('confirmSub').textContent = order.name ? ('Thank you, ' + order.name.trim() + ' — your shade is on its way.') : 'Thank you — your shade is on its way.';
+
+    document.getElementById('confirmItems').innerHTML = order.items.map((g) => {
+      const swatch = g.code ? `<span class="swatch" style="background:${g.code}"></span>` : `<span class="swatch none"></span>`;
+      return `<div class="confirm-item">
+        ${swatch}
+        <div class="meta"><div class="pname">${g.product}${g.qty > 1 ? ' × ' + g.qty : ''}</div><div class="pshade">${g.shade || 'Single shade'}</div></div>
+        <div class="price">$${g.price * g.qty}</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('subtotalOut').textContent = '$' + order.subtotal;
+    document.getElementById('shippingOut').textContent = order.shipping === 0 ? 'Free' : '$' + order.shipping;
+    document.getElementById('totalOut').textContent = '$' + order.total;
+
+    document.getElementById('deliveryCountry').textContent = order.country || '—';
+    document.getElementById('deliveryWindow').textContent = deliveryWindowFor(order.shipping);
+    document.getElementById('deliveryEmail').textContent = order.email || '—';
+  }
+</script>
+
+</body>
+</html>

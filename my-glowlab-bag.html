@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlowLab — Bag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  /* ===== Tokens — SHOP surface context, same as Category and Shade Picker ===== */
+  :root {
+    --color-brand-ink: #17151A;
+    --color-brand-accent: #C88FA4;
+    --color-brand-accent-2: #D6B98C;
+    --color-accent-text: #9C5C74;
+    --color-surface-shop: #FBF7F5;
+    --color-surface-card: #FFFFFF;
+    --color-text-primary: #1D1620;
+    --color-text-primary-inverse: #FDFBFA;
+    --color-text-muted: #6E6470;
+    --color-line: #E6DEE2;
+    --color-nav-glass: rgba(251,247,245,0.92);
+    --color-error: #B0392F;
+    --color-success: #2F8A5B;
+
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --type-section: clamp(24px, 3vw, 32px);
+    --type-base: 16px;
+    --type-small: 14px;
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+    --line-normal: 1.5;
+    --line-relaxed: 1.7;
+
+    --space-tight: 4px;
+    --space-compact: 8px;
+    --space-comfortable: 16px;
+    --space-default: 24px;
+    --space-roomy: 32px;
+    --space-section: 48px;
+
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 28px;
+    --radius-full: 999px;
+
+    --motion-fast: 120ms;
+    --motion-default: 250ms;
+    --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Dark mode — token architecture was already semantic (no raw hex in
+     component rules), so this is the only block needed to support it.
+     Added post-review: this screen previously had no override at all. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-surface-shop: #17151A;
+      --color-surface-card: #221B26;
+      --color-text-primary: #F3EDF0;
+      --color-text-muted: #A79AA8;
+      --color-line: #362B3A;
+      --color-nav-glass: rgba(23,21,26,0.92);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--color-surface-shop);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  header.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-comfortable) var(--space-default);
+    background: var(--color-nav-glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    font-size: 18px;
+    letter-spacing: 0.04em;
+  }
+  /* Tertiary: continue-shopping link (ia-map.md Part 4) */
+  .continue-link {
+    font-size: var(--type-small);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .continue-link:hover { color: var(--color-text-primary); }
+
+  main.bag-main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: var(--space-section) var(--space-default);
+  }
+
+  main.bag-main h1 {
+    font-family: var(--font-display);
+    font-size: var(--type-section);
+    font-weight: var(--weight-semibold);
+    margin-bottom: var(--space-section);
+  }
+
+  /* ===== Secondary: line items ===== */
+  .line-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-comfortable);
+    margin-bottom: var(--space-section);
+  }
+
+  .line-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-comfortable);
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+    padding: var(--space-comfortable);
+  }
+
+  .line-item .swatch {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .line-item .swatch.none {
+    background: var(--color-surface-shop);
+    border: 1px dashed var(--color-line);
+  }
+
+  .line-item .info { flex: 1; min-width: 0; }
+  .line-item .product-name {
+    font-weight: var(--weight-semibold);
+    font-size: var(--type-base);
+  }
+  .line-item .shade-name {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .line-item .unit-price {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  .qty-stepper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-compact);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-full);
+    padding: 2px;
+  }
+  .qty-stepper button {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-surface-shop);
+    color: var(--color-text-primary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qty-stepper button:hover { background: var(--color-line); }
+  .qty-stepper button:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 2px; }
+  .qty-stepper span {
+    min-width: 20px;
+    text-align: center;
+    font-size: var(--type-small);
+    font-weight: var(--weight-medium);
+  }
+
+  .line-total {
+    font-weight: var(--weight-semibold);
+    min-width: 52px;
+    text-align: right;
+  }
+
+  .remove-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .remove-btn:hover { background: var(--color-line); color: var(--color-error); }
+  .remove-btn:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 2px; }
+
+  /* ===== Primary: subtotal + Proceed to Checkout ===== */
+  .summary-panel {
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-roomy) var(--space-default);
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--type-small);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-compact);
+  }
+  .summary-row.total {
+    font-size: var(--type-base);
+    color: var(--color-text-primary);
+    font-weight: var(--weight-semibold);
+    margin-top: var(--space-comfortable);
+    padding-top: var(--space-comfortable);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .checkout-btn {
+    width: 100%;
+    margin-top: var(--space-roomy);
+    min-height: 48px;
+    padding: var(--space-comfortable);
+    border: none;
+    border-radius: var(--radius-full);
+    background: var(--color-brand-accent);
+    color: var(--color-brand-ink);
+    font-family: var(--font-body);
+    font-weight: var(--weight-semibold);
+    font-size: var(--type-base);
+    cursor: pointer;
+    transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
+  }
+  .checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(200,143,164,0.3); }
+  .checkout-btn:focus-visible { outline: 2px solid var(--color-brand-accent-2); outline-offset: 3px; }
+
+  .checkout-note {
+    margin-top: var(--space-compact);
+    font-size: 12px;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  /* ===== Empty state — required per ia-map.md ===== */
+  .empty-bag {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-section) 0;
+    gap: var(--space-compact);
+  }
+  .empty-bag.visible { display: flex; }
+  .empty-bag .icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-compact);
+  }
+  .empty-bag h2 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: var(--weight-semibold);
+  }
+  .empty-bag p {
+    font-size: var(--type-small);
+    color: var(--color-text-muted);
+    max-width: 320px;
+  }
+  .empty-bag a.shop-btn {
+    margin-top: var(--space-comfortable);
+    display: inline-block;
+    background: var(--color-brand-accent);
+    color: var(--color-brand-ink);
+    text-decoration: none;
+    border-radius: var(--radius-full);
+    padding: var(--space-compact) var(--space-roomy);
+    min-height: 44px;
+    line-height: 28px;
+    font-weight: var(--weight-semibold);
+    font-size: var(--type-small);
+  }
+
+  .bag-content.hidden { display: none; }
+
+  .toast {
+    position: fixed;
+    bottom: var(--space-default);
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--color-brand-ink);
+    color: var(--color-text-primary-inverse);
+    padding: var(--space-comfortable) var(--space-roomy);
+    border-radius: var(--radius-full);
+    font-size: var(--type-small);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-default) var(--motion-ease), transform var(--motion-default) var(--motion-ease);
+    z-index: 50;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== Mobile floor, ~375px ===== */
+  @media (max-width: 560px) {
+    main.bag-main { padding: var(--space-roomy) var(--space-comfortable); }
+    .line-item { flex-wrap: wrap; }
+    .line-item .info { min-width: 140px; }
+    .qty-stepper { order: 3; margin-left: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top-nav">
+  <div class="wordmark">GLOWLAB</div>
+  <a class="continue-link" href="my-glowlab-category.html">← Continue Shopping</a>
+</header>
+
+<main class="bag-main">
+  <h1>Your Bag</h1>
+
+  <div class="bag-content" id="bagContent">
+    <div class="line-items" id="lineItems"></div>
+
+    <div class="summary-panel">
+      <div class="summary-row">
+        <span id="itemCountLabel">0 items</span>
+        <span id="subtotalValue">$0</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total</span>
+        <span id="totalValue">$0</span>
+      </div>
+      <button class="checkout-btn" id="checkoutBtn">Proceed to Checkout</button>
+      <div class="checkout-note">Checkout isn't built yet — this is as far as the flow goes for now.</div>
+    </div>
+  </div>
+
+  <div class="empty-bag" id="emptyBag">
+    <div class="icon">◌</div>
+    <h2>Your bag is empty</h2>
+    <p>Nothing added yet — shade picks from Lipstick, Blush, and Eyeshadow show up here.</p>
+    <a class="shop-btn" href="my-glowlab-category.html">Start Shopping</a>
+  </div>
+</main>
+
+<script>
+  const CART_KEY = 'glowlab_cart';
+  let memoryCart = [];
+
+  function getFlatCart() {
+    try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { return memoryCart; }
+  }
+  function setFlatCart(items) {
+    memoryCart = items;
+    try { localStorage.setItem(CART_KEY, JSON.stringify(items)); } catch (e) { /* memoryCart above still holds it */ }
+  }
+
+  // The category screen pushes one flat entry per "Add to Bag" click (no
+  // quantity field). This screen groups identical product+shade combos into
+  // a single line with a quantity, purely for display and editing — any
+  // qty/remove change here gets expanded back into that same flat format
+  // before saving, so the category screen's simpler write side never has to
+  // know grouping exists.
+  function groupCart(flat) {
+    const groups = [];
+    flat.forEach((entry) => {
+      const key = entry.product + '::' + (entry.shade || '');
+      let g = groups.find((x) => x.key === key);
+      if (!g) {
+        g = { key, product: entry.product, shade: entry.shade, code: entry.code, price: entry.price, qty: 0 };
+        groups.push(g);
+      }
+      g.qty += 1;
+    });
+    return groups;
+  }
+  function flattenGroups(groups) {
+    const flat = [];
+    groups.forEach((g) => {
+      for (let i = 0; i < g.qty; i++) {
+        flat.push({ product: g.product, shade: g.shade, code: g.code, price: g.price });
+      }
+    });
+    return flat;
+  }
+
+  const lineItemsEl = document.getElementById('lineItems');
+  const bagContentEl = document.getElementById('bagContent');
+  const emptyBagEl = document.getElementById('emptyBag');
+  const itemCountEl = document.getElementById('itemCountLabel');
+  const subtotalEl = document.getElementById('subtotalValue');
+  const totalEl = document.getElementById('totalValue');
+
+  let currentGroups = [];
+
+  function render() {
+    currentGroups = groupCart(getFlatCart());
+
+    if (currentGroups.length === 0) {
+      bagContentEl.classList.add('hidden');
+      emptyBagEl.classList.add('visible');
+      return;
+    }
+    bagContentEl.classList.remove('hidden');
+    emptyBagEl.classList.remove('visible');
+
+    lineItemsEl.innerHTML = currentGroups.map((g, i) => {
+      const swatch = g.code
+        ? `<span class="swatch" style="background:${g.code}"></span>`
+        : `<span class="swatch none" aria-hidden="true"></span>`;
+      return `
+        <div class="line-item" data-key="${g.key}">
+          ${swatch}
+          <div class="info">
+            <div class="product-name">${g.product}</div>
+            <div class="shade-name">${g.shade ? g.shade : 'Single shade'}</div>
+            <div class="unit-price">$${g.price} each</div>
+          </div>
+          <div class="qty-stepper">
+            <button type="button" class="qty-minus" aria-label="Decrease quantity">−</button>
+            <span>${g.qty}</span>
+            <button type="button" class="qty-plus" aria-label="Increase quantity">+</button>
+          </div>
+          <div class="line-total">$${g.price * g.qty}</div>
+          <button type="button" class="remove-btn" aria-label="Remove ${g.product}${g.shade ? ', ' + g.shade : ''}">×</button>
+        </div>`;
+    }).join('');
+
+    const totalQty = currentGroups.reduce((sum, g) => sum + g.qty, 0);
+    const subtotal = currentGroups.reduce((sum, g) => sum + g.qty * g.price, 0);
+    itemCountEl.textContent = totalQty + (totalQty === 1 ? ' item' : ' items');
+    subtotalEl.textContent = '$' + subtotal;
+    totalEl.textContent = '$' + subtotal;
+
+    wireLineItemControls();
+  }
+
+  function saveAndRerender() {
+    setFlatCart(flattenGroups(currentGroups));
+    render();
+  }
+
+  function wireLineItemControls() {
+    lineItemsEl.querySelectorAll('.line-item').forEach((row) => {
+      const key = row.dataset.key;
+      const group = currentGroups.find((g) => g.key === key);
+
+      row.querySelector('.qty-plus').addEventListener('click', () => {
+        group.qty += 1;
+        saveAndRerender();
+      });
+      row.querySelector('.qty-minus').addEventListener('click', () => {
+        group.qty -= 1;
+        if (group.qty <= 0) {
+          currentGroups = currentGroups.filter((g) => g.key !== key);
+        }
+        saveAndRerender();
+      });
+      row.querySelector('.remove-btn').addEventListener('click', () => {
+        currentGroups = currentGroups.filter((g) => g.key !== key);
+        saveAndRerender();
+      });
+    });
+  }
+
+  function showToast(message) {
+    let toast = document.querySelector('.toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('visible');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('visible'), 2400);
+  }
+
+  document.getElementById('checkoutBtn').addEventListener('click', () => {
+    showToast("Checkout isn't built yet — coming in a later step.");
+  });
+
+  render();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlowLab — Create Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  /* ===== Tokens — SHOP surface context, same as the rest of the flow ===== */
+  :root {
+    --color-brand-ink: #17151A;
+    --color-brand-accent: #C88FA4;
+    --color-brand-accent-2: #D6B98C;
+    --color-accent-text: #9C5C74;
+    --color-surface-shop: #FBF7F5;
+    --color-surface-card: #FFFFFF;
+    --color-text-primary: #1D1620;
+    --color-text-primary-inverse: #FDFBFA;
+    --color-text-muted: #6E6470;
+    --color-line: #E6DEE2;
+    --color-error: #B0392F;
+    --color-success: #2F8A5B;
+
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+    --type-section: clamp(24px, 3vw, 30px);
+    --type-base: 16px;
+    --type-small: 14px;
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+    --line-normal: 1.5;
+    --line-relaxed: 1.7;
+
+    --space-tight: 4px;
+    --space-compact: 8px;
+    --space-comfortable: 16px;
+    --space-default: 24px;
+    --space-roomy: 32px;
+    --space-section: 48px;
+
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 28px;
+    --radius-full: 999px;
+
+    --motion-fast: 120ms;
+    --motion-default: 250ms;
+    --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Dark mode — token architecture was already semantic (no raw hex in
+     component rules), so this is the only block needed to support it.
+     Added post-review: this screen previously had no override at all. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-surface-shop: #17151A;
+      --color-surface-card: #221B26;
+      --color-text-primary: #F3EDF0;
+      --color-text-muted: #A79AA8;
+      --color-line: #362B3A;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--color-surface-shop);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  header.top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-comfortable) var(--space-default);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .wordmark { font-family: var(--font-display); font-weight: var(--weight-semibold); font-size: 18px; letter-spacing: 0.04em; }
+
+  main.account-main {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: var(--space-section) var(--space-default);
+  }
+
+  .account-header { text-align: center; margin-bottom: var(--space-section); }
+  .account-header h1 { font-family: var(--font-display); font-size: var(--type-section); font-weight: var(--weight-semibold); }
+  .account-header p { font-size: var(--type-small); color: var(--color-text-muted); margin-top: var(--space-tight); line-height: var(--line-relaxed); }
+
+  .card { background: var(--color-surface-card); border: 1px solid var(--color-line); border-radius: var(--radius-lg); padding: var(--space-roomy) var(--space-default); }
+
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-comfortable); }
+  .field label { font-size: 12px; color: var(--color-text-muted); }
+  .field input {
+    font-family: var(--font-body); font-size: var(--type-base); padding: var(--space-comfortable);
+    min-height: 44px; border: 1.5px solid var(--color-line); border-radius: var(--radius-sm);
+    background: var(--color-surface-card); color: var(--color-text-primary);
+  }
+  .field input:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 1px; border-color: var(--color-brand-accent); }
+  .field.error input { border-color: var(--color-error); }
+  .field .error-msg { font-size: 11px; color: var(--color-error); display: none; }
+  .field.error .error-msg { display: block; }
+  .field .hint { font-size: 11px; color: var(--color-text-muted); }
+
+  .create-btn {
+    width: 100%;
+    margin-top: var(--space-comfortable);
+    min-height: 48px;
+    padding: var(--space-comfortable);
+    border: none;
+    border-radius: var(--radius-full);
+    background: var(--color-brand-accent);
+    color: var(--color-brand-ink);
+    font-family: var(--font-body);
+    font-weight: var(--weight-semibold);
+    font-size: var(--type-base);
+    cursor: pointer;
+    transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
+  }
+  .create-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(200,143,164,0.3); }
+  .create-btn:focus-visible { outline: 2px solid var(--color-brand-accent-2); outline-offset: 3px; }
+  .create-btn[disabled] { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .divider { display: flex; align-items: center; gap: var(--space-comfortable); margin: var(--space-roomy) 0; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--color-line); }
+  .divider span { font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* This is the whole point of the screen existing as optional: a real,
+     equally-sized way out, not a smaller/greyed-out afterthought link. */
+  .guest-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+    min-height: 48px;
+    line-height: 46px;
+    border: 1.5px solid var(--color-line);
+    border-radius: var(--radius-full);
+    color: var(--color-text-primary);
+    font-weight: var(--weight-medium);
+    font-size: var(--type-base);
+    transition: border-color var(--motion-fast) var(--motion-ease);
+  }
+  .guest-btn:hover { border-color: var(--color-brand-accent); }
+  .guest-btn:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 2px; }
+
+  .success-banner {
+    display: none;
+    text-align: center;
+    padding: var(--space-roomy) var(--space-default);
+  }
+  .success-banner.visible { display: block; }
+  .success-banner .check { width: 48px; height: 48px; border-radius: 50%; background: var(--color-success); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto var(--space-comfortable); }
+  .success-banner h2 { font-family: var(--font-display); font-size: 22px; font-weight: var(--weight-semibold); }
+  .success-banner p { font-size: var(--type-small); color: var(--color-text-muted); margin-top: var(--space-tight); }
+  .account-form.hidden { display: none; }
+
+  .continue-checkout-btn {
+    display: block; width: 100%; margin-top: var(--space-roomy); text-align: center; text-decoration: none;
+    min-height: 48px; line-height: 48px; border-radius: var(--radius-full);
+    background: var(--color-brand-accent); color: var(--color-brand-ink); font-weight: var(--weight-semibold); font-size: var(--type-base);
+  }
+</style>
+</head>
+<body>
+
+<header class="top-nav">
+  <div class="wordmark">GLOWLAB</div>
+</header>
+
+<main class="account-main">
+  <div id="formView">
+    <div class="account-header">
+      <h1>Create an account</h1>
+      <p>Optional — save your shade and shipping details for next time. Guest checkout works exactly the same either way.</p>
+    </div>
+
+    <div class="card">
+      <div class="account-form" id="accountForm">
+        <div class="field" id="field-name">
+          <label for="fullName">Full name</label>
+          <input type="text" id="fullName" autocomplete="name">
+          <span class="error-msg">Enter your name.</span>
+        </div>
+        <div class="field" id="field-accEmail">
+          <label for="accEmail">Email</label>
+          <input type="email" id="accEmail" autocomplete="email">
+          <span class="error-msg">Enter a valid email address.</span>
+        </div>
+        <div class="field" id="field-accPassword">
+          <label for="accPassword">Password</label>
+          <input type="password" id="accPassword" autocomplete="new-password">
+          <span class="hint">At least 8 characters.</span>
+          <span class="error-msg">Password needs to be at least 8 characters.</span>
+        </div>
+
+        <button class="create-btn" id="createBtn">Create Account</button>
+
+        <div class="divider"><span>or</span></div>
+
+        <a class="guest-btn" href="my-glowlab-checkout.html">Continue as Guest</a>
+      </div>
+
+      <div class="success-banner" id="successBanner">
+        <div class="check">✓</div>
+        <h2>Account created</h2>
+        <p>This is a portfolio build — no real account was created and nothing was saved. In a live build, your details would carry into Checkout automatically from here.</p>
+        <a class="continue-checkout-btn" href="my-glowlab-checkout.html">Continue to Checkout</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  function setFieldError(id, hasError) {
+    const wrap = document.getElementById('field-' + id);
+    if (wrap) wrap.classList.toggle('error', hasError);
+  }
+
+  const createBtn = document.getElementById('createBtn');
+  const accountForm = document.getElementById('accountForm');
+  const successBanner = document.getElementById('successBanner');
+
+  createBtn.addEventListener('click', () => {
+    const name = document.getElementById('fullName');
+    const email = document.getElementById('accEmail');
+    const password = document.getElementById('accPassword');
+
+    let ok = true;
+    if (!name.value.trim()) { setFieldError('name', true); ok = false; } else { setFieldError('name', false); }
+
+    const emailOk = /.+@.+\..+/.test(email.value);
+    setFieldError('accEmail', !emailOk);
+    if (!emailOk) ok = false;
+
+    const passOk = password.value.length >= 8;
+    setFieldError('accPassword', !passOk);
+    if (!passOk) ok = false;
+
+    if (!ok) return;
+
+    accountForm.classList.add('hidden');
+    successBanner.classList.add('visible');
+  });
+</script>
+
+</body>
+</html>

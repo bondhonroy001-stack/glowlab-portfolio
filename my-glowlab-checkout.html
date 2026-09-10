@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlowLab — Checkout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  /* ===== Tokens — SHOP surface context, same as Bag/Category/Shade Picker ===== */
+  :root {
+    --color-brand-ink: #17151A;
+    --color-brand-accent: #C88FA4;
+    --color-brand-accent-2: #D6B98C;
+    --color-accent-text: #9C5C74;
+    --color-surface-shop: #FBF7F5;
+    --color-surface-card: #FFFFFF;
+    --color-text-primary: #1D1620;
+    --color-text-primary-inverse: #FDFBFA;
+    --color-text-muted: #6E6470;
+    --color-line: #E6DEE2;
+    --color-nav-glass: rgba(251,247,245,0.92);
+    --color-error: #B0392F;
+    --color-success: #2F8A5B;
+
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --type-section: clamp(22px, 3vw, 28px);
+    --type-base: 16px;
+    --type-small: 14px;
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+    --line-normal: 1.5;
+
+    --space-tight: 4px;
+    --space-compact: 8px;
+    --space-comfortable: 16px;
+    --space-default: 24px;
+    --space-roomy: 32px;
+    --space-section: 48px;
+
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 28px;
+    --radius-full: 999px;
+
+    --motion-fast: 120ms;
+    --motion-default: 250ms;
+    --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Dark mode — token architecture was already semantic (no raw hex in
+     component rules), so this is the only block needed to support it.
+     Added post-review: this screen previously had no override at all. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-surface-shop: #17151A;
+      --color-surface-card: #221B26;
+      --color-text-primary: #F3EDF0;
+      --color-text-muted: #A79AA8;
+      --color-line: #362B3A;
+      --color-nav-glass: rgba(23,21,26,0.92);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--color-surface-shop);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  header.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-comfortable) var(--space-default);
+    background: var(--color-nav-glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: var(--weight-semibold);
+    font-size: 18px;
+    letter-spacing: 0.04em;
+  }
+  .back-link {
+    font-size: var(--type-small);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .back-link:hover { color: var(--color-text-primary); }
+
+  /* ===== Two-column layout — forms left, sticky summary right, matching
+     the pattern already established on NOVA's checkout. Below 860px it
+     collapses to one column with the summary reordered above the forms,
+     so total/Place Order isn't buried under three form sections. ===== */
+  main.checkout-main {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: var(--space-section) var(--space-default);
+    display: flex;
+    gap: var(--space-section);
+    align-items: flex-start;
+  }
+  .checkout-forms { flex: 2; display: flex; flex-direction: column; gap: var(--space-section); }
+  .checkout-summary {
+    flex: 1;
+    position: sticky;
+    top: 84px;
+    background: var(--color-surface-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-roomy) var(--space-default);
+  }
+
+  section.form-block h2 {
+    font-family: var(--font-display);
+    font-size: var(--type-section);
+    font-weight: var(--weight-semibold);
+    margin-bottom: var(--space-comfortable);
+  }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-comfortable); margin-bottom: var(--space-comfortable); }
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-comfortable); }
+  .field label { font-size: 12px; color: var(--color-text-muted); }
+  /* Marks required fields before submission, not just after a failed one —
+     heuristic-evaluation flagged this as a real gap: the old version only
+     signaled "required" via the red error state, after the fact. */
+  .field label.required::after { content: " *"; color: var(--color-accent-text); }
+  .required-legend { font-size: 11px; color: var(--color-text-muted); margin-bottom: var(--space-default); }
+  .field input, .field select {
+    font-family: var(--font-body);
+    font-size: var(--type-base);
+    padding: var(--space-comfortable);
+    min-height: 44px;
+    border: 1.5px solid var(--color-line);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-card);
+    color: var(--color-text-primary);
+  }
+  .field input:focus-visible, .field select:focus-visible {
+    outline: 2px solid var(--color-accent-text);
+    outline-offset: 1px;
+    border-color: var(--color-brand-accent);
+  }
+  .field.error input, .field.error select { border-color: var(--color-error); }
+  .field .error-msg { font-size: 11px; color: var(--color-error); display: none; }
+  .field.error .error-msg { display: block; }
+
+  /* Payment method toggle — two cards, matching NOVA's pattern but with
+     GlowLab's actual payment methods per design-brief.md: card and PayPal,
+     no wallet option (that was never a settled constraint here). */
+  .payment-methods { display: flex; gap: var(--space-comfortable); margin-bottom: var(--space-default); }
+  .payment-option {
+    flex: 1;
+    border: 1.5px solid var(--color-line);
+    border-radius: var(--radius-md);
+    padding: var(--space-comfortable);
+    text-align: center;
+    cursor: pointer;
+    font-size: var(--type-small);
+    font-weight: var(--weight-medium);
+    min-height: 44px;
+    transition: border-color var(--motion-fast) var(--motion-ease), background var(--motion-fast) var(--motion-ease);
+  }
+  .payment-option.active { border-color: var(--color-brand-accent); background: rgba(200,143,164,0.08); }
+  .payment-option:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 2px; }
+
+  .paypal-note {
+    display: none;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    background: var(--color-surface-shop);
+    border-radius: var(--radius-sm);
+    padding: var(--space-comfortable);
+  }
+  .paypal-note.visible { display: block; }
+  .card-fields.hidden { display: none; }
+
+  /* ===== Order summary ===== */
+  .summary-items { display: flex; flex-direction: column; gap: var(--space-comfortable); margin-bottom: var(--space-default); padding-bottom: var(--space-default); border-bottom: 1px solid var(--color-line); }
+  .summary-item { display: flex; align-items: center; gap: var(--space-compact); }
+  .summary-item .swatch { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
+  .summary-item .swatch.none { background: var(--color-surface-shop); border: 1px dashed var(--color-line); }
+  .summary-item .meta { flex: 1; font-size: 12px; }
+  .summary-item .meta .pname { font-weight: var(--weight-medium); }
+  .summary-item .meta .pshade { color: var(--color-text-muted); }
+  .summary-item .price { font-size: 12px; font-weight: var(--weight-medium); }
+
+  .summary-row { display: flex; justify-content: space-between; font-size: var(--type-small); color: var(--color-text-muted); margin-bottom: var(--space-compact); }
+  .summary-row.total { font-size: var(--type-base); color: var(--color-text-primary); font-weight: var(--weight-semibold); margin-top: var(--space-comfortable); padding-top: var(--space-comfortable); border-top: 1px solid var(--color-line); }
+  .summary-row .shipping-pending { color: var(--color-text-muted); font-style: italic; }
+
+  .place-order-btn {
+    width: 100%;
+    margin-top: var(--space-roomy);
+    min-height: 48px;
+    padding: var(--space-comfortable);
+    border: none;
+    border-radius: var(--radius-full);
+    background: var(--color-brand-accent);
+    color: var(--color-brand-ink);
+    font-family: var(--font-body);
+    font-weight: var(--weight-semibold);
+    font-size: var(--type-base);
+    cursor: pointer;
+    transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease);
+  }
+  .place-order-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(200,143,164,0.3); }
+  .place-order-btn:focus-visible { outline: 2px solid var(--color-brand-accent-2); outline-offset: 3px; }
+  .place-order-btn[disabled] { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+  .place-order-btn.loading { opacity: 0.8; }
+
+  .checkout-note { margin-top: var(--space-compact); font-size: 12px; color: var(--color-text-muted); text-align: center; }
+
+  .form-error-banner {
+    display: none;
+    background: rgba(176,57,47,0.08);
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+    border-radius: var(--radius-sm);
+    padding: var(--space-comfortable);
+    font-size: var(--type-small);
+    margin-bottom: var(--space-default);
+  }
+  .form-error-banner.visible { display: block; }
+
+  /* ===== Empty bag guard: no items, no checkout ===== */
+  .empty-guard {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-compact);
+    padding: var(--space-section) 0;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .empty-guard.visible { display: flex; }
+  .empty-guard h2 { font-family: var(--font-display); font-size: 22px; font-weight: var(--weight-semibold); }
+  .empty-guard p { font-size: var(--type-small); color: var(--color-text-muted); }
+  .empty-guard a {
+    margin-top: var(--space-comfortable);
+    display: inline-block;
+    background: var(--color-brand-accent);
+    color: var(--color-brand-ink);
+    text-decoration: none;
+    border-radius: var(--radius-full);
+    padding: var(--space-compact) var(--space-roomy);
+    min-height: 44px;
+    line-height: 28px;
+    font-weight: var(--weight-semibold);
+    font-size: var(--type-small);
+  }
+  .checkout-main.hidden { display: none; }
+
+  @media (max-width: 860px) {
+    main.checkout-main { flex-direction: column; }
+    .checkout-summary { position: static; order: -1; width: 100%; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top-nav">
+  <div class="wordmark">GLOWLAB</div>
+  <a class="back-link" href="my-glowlab-bag.html">← Back to Bag</a>
+</header>
+
+<main class="checkout-main" id="checkoutMain">
+  <div class="checkout-forms">
+    <div class="form-error-banner" id="formErrorBanner">Check the highlighted fields below — a few things are missing before this can be submitted.</div>
+    <p class="required-legend">Fields marked <span style="color:var(--color-accent-text)">*</span> are required.</p>
+
+    <section class="form-block">
+      <h2>Contact</h2>
+      <div class="field" id="field-email">
+        <label class="required" for="email">Email</label>
+        <input type="email" id="email" autocomplete="email" placeholder="you@email.com">
+        <span class="error-msg">Enter an email address.</span>
+      </div>
+      <a href="my-glowlab-account.html" style="font-size:12px;color:var(--color-accent-text);text-decoration:none;">Want to save your info for next time? Create an account (optional)</a>
+    </section>
+
+    <section class="form-block">
+      <h2>Shipping address</h2>
+      <div class="field-row">
+        <div class="field" id="field-firstName">
+          <label class="required" for="firstName">First name</label>
+          <input type="text" id="firstName" autocomplete="given-name">
+          <span class="error-msg">Required.</span>
+        </div>
+        <div class="field" id="field-lastName">
+          <label class="required" for="lastName">Last name</label>
+          <input type="text" id="lastName" autocomplete="family-name">
+          <span class="error-msg">Required.</span>
+        </div>
+      </div>
+      <div class="field" id="field-phone">
+        <label class="required" for="phone">Phone</label>
+        <input type="tel" id="phone" autocomplete="tel" placeholder="+1 555 000 0000">
+        <span class="error-msg">Enter a phone number, in case delivery needs to reach you.</span>
+      </div>
+      <div class="field" id="field-address">
+        <label class="required" for="address">Street address</label>
+        <input type="text" id="address" autocomplete="street-address" placeholder="Apartment, street">
+        <span class="error-msg">Required.</span>
+      </div>
+      <div class="field-row">
+        <div class="field" id="field-city">
+          <label class="required" for="city">City</label>
+          <input type="text" id="city" autocomplete="address-level2">
+          <span class="error-msg">Required.</span>
+        </div>
+        <div class="field" id="field-state">
+          <label class="required" for="state">State / Province</label>
+          <input type="text" id="state" autocomplete="address-level1">
+          <span class="error-msg">Required.</span>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field" id="field-country">
+          <label class="required" for="country">Country</label>
+          <select id="country" autocomplete="country">
+            <option value="">Select a country</option>
+            <option value="US">United States</option>
+            <option value="GB">United Kingdom</option>
+            <option value="BD">Bangladesh</option>
+            <option value="IN">India</option>
+            <option value="DE">Germany</option>
+            <option value="AE">United Arab Emirates</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <span class="error-msg">Select a country — this decides the shipping fee.</span>
+        </div>
+        <div class="field" id="field-postal">
+          <label class="required" for="postal">Postal code</label>
+          <input type="text" id="postal" autocomplete="postal-code">
+          <span class="error-msg">Required.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-block">
+      <h2>Payment</h2>
+      <div class="payment-methods" id="paymentMethods">
+        <button type="button" class="payment-option active" data-method="card">Card</button>
+        <button type="button" class="payment-option" data-method="paypal">PayPal</button>
+      </div>
+      <div class="card-fields" id="cardFields">
+        <div class="field" id="field-cardNumber">
+          <label class="required" for="cardNumber">Card number</label>
+          <input type="text" id="cardNumber" inputmode="numeric" placeholder="0000 0000 0000 0000" autocomplete="cc-number">
+          <span class="error-msg">Enter a card number.</span>
+        </div>
+        <div class="field-row">
+          <div class="field" id="field-cardExpiry">
+            <label class="required" for="cardExpiry">Expiry (MM/YY)</label>
+            <input type="text" id="cardExpiry" placeholder="MM/YY" autocomplete="cc-exp">
+            <span class="error-msg">Required.</span>
+          </div>
+          <div class="field" id="field-cardCvc">
+            <label class="required" for="cardCvc">CVC</label>
+            <input type="text" id="cardCvc" inputmode="numeric" placeholder="123" autocomplete="cc-csc">
+            <span class="error-msg">Required.</span>
+          </div>
+        </div>
+      </div>
+      <div class="paypal-note" id="paypalNote">You'll confirm payment with PayPal after placing the order — no card details needed here.</div>
+    </section>
+  </div>
+
+  <aside class="checkout-summary">
+    <div class="summary-items" id="summaryItems"></div>
+    <div class="summary-row">
+      <span>Subtotal</span>
+      <span id="subtotalValue">$0</span>
+    </div>
+    <div class="summary-row">
+      <span>Shipping</span>
+      <span id="shippingValue" class="shipping-pending">Enter your address</span>
+    </div>
+    <div class="summary-row total">
+      <span>Total</span>
+      <span id="totalValue">$0</span>
+    </div>
+    <button class="place-order-btn" id="placeOrderBtn">Place Order</button>
+    <div class="checkout-note">This is a portfolio build — no real payment is processed. Placing the order clears your bag and takes you to the confirmation screen.</div>
+  </aside>
+</main>
+
+<div class="empty-guard" id="emptyGuard">
+  <h2>Your bag is empty</h2>
+  <p>There's nothing to check out yet — add a shade from Lipstick, Blush, or Eyeshadow first.</p>
+  <a href="my-glowlab-category.html">Start Shopping</a>
+</div>
+
+<script>
+  const CART_KEY = 'glowlab_cart';
+  let memoryCart = [];
+  function getFlatCart() {
+    try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { return memoryCart; }
+  }
+
+  function groupCart(flat) {
+    const groups = [];
+    flat.forEach((entry) => {
+      const key = entry.product + '::' + (entry.shade || '');
+      let g = groups.find((x) => x.key === key);
+      if (!g) { g = { key, product: entry.product, shade: entry.shade, code: entry.code, price: entry.price, qty: 0 }; groups.push(g); }
+      g.qty += 1;
+    });
+    return groups;
+  }
+
+  const checkoutMain = document.getElementById('checkoutMain');
+  const emptyGuard = document.getElementById('emptyGuard');
+  const summaryItemsEl = document.getElementById('summaryItems');
+  const subtotalEl = document.getElementById('subtotalValue');
+  const shippingEl = document.getElementById('shippingValue');
+  const totalEl = document.getElementById('totalValue');
+  const countrySelect = document.getElementById('country');
+
+  let subtotal = 0;
+  let shippingFee = null; // null = not yet resolved (no country picked)
+
+  let currentGroups = [];
+  function renderSummary() {
+    const groups = groupCart(getFlatCart());
+    currentGroups = groups;
+
+    if (groups.length === 0) {
+      checkoutMain.classList.add('hidden');
+      emptyGuard.classList.add('visible');
+      return;
+    }
+    checkoutMain.classList.remove('hidden');
+    emptyGuard.classList.remove('visible');
+
+    summaryItemsEl.innerHTML = groups.map((g) => {
+      const swatch = g.code ? `<span class="swatch" style="background:${g.code}"></span>` : `<span class="swatch none"></span>`;
+      return `<div class="summary-item">
+        ${swatch}
+        <div class="meta"><div class="pname">${g.product} ${g.qty > 1 ? '× ' + g.qty : ''}</div><div class="pshade">${g.shade || 'Single shade'}</div></div>
+        <div class="price">$${g.price * g.qty}</div>
+      </div>`;
+    }).join('');
+
+    subtotal = groups.reduce((sum, g) => sum + g.qty * g.price, 0);
+    subtotalEl.textContent = '$' + subtotal;
+    updateTotals();
+  }
+
+  // Shipping resolves once a country is picked — same tiered pattern NOVA
+  // uses: free domestic over $50, flat fee otherwise, higher flat fee for
+  // regions that are genuinely more expensive to ship to.
+  function resolveShippingFee(country) {
+    if (!country) return null;
+    if (country === 'US') return subtotal >= 50 ? 0 : 6;
+    if (country === 'BD' || country === 'IN' || country === 'AE') return 18;
+    return 12;
+  }
+
+  function updateTotals() {
+    if (shippingFee === null) {
+      shippingEl.textContent = 'Enter your address';
+      shippingEl.classList.add('shipping-pending');
+      totalEl.textContent = '$' + subtotal;
+    } else {
+      shippingEl.textContent = shippingFee === 0 ? 'Free' : '$' + shippingFee;
+      shippingEl.classList.remove('shipping-pending');
+      totalEl.textContent = '$' + (subtotal + shippingFee);
+    }
+  }
+
+  countrySelect.addEventListener('change', () => {
+    shippingFee = resolveShippingFee(countrySelect.value);
+    updateTotals();
+  });
+
+  // ===== Payment method toggle =====
+  const paymentButtons = [...document.querySelectorAll('.payment-option')];
+  const cardFields = document.getElementById('cardFields');
+  const paypalNote = document.getElementById('paypalNote');
+  let selectedMethod = 'card';
+
+  paymentButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedMethod = btn.dataset.method;
+      paymentButtons.forEach((b) => b.classList.toggle('active', b === btn));
+      cardFields.classList.toggle('hidden', selectedMethod !== 'card');
+      paypalNote.classList.toggle('visible', selectedMethod === 'paypal');
+      clearFieldErrors(['cardNumber', 'cardExpiry', 'cardCvc']);
+    });
+  });
+
+  // ===== Validation =====
+  function setFieldError(id, hasError) {
+    const wrap = document.getElementById('field-' + id);
+    if (wrap) wrap.classList.toggle('error', hasError);
+  }
+  function clearFieldErrors(ids) {
+    ids.forEach((id) => setFieldError(id, false));
+  }
+
+  function validate() {
+    let ok = true;
+    const required = ['firstName', 'lastName', 'phone', 'address', 'city', 'state', 'country', 'postal'];
+    required.forEach((id) => {
+      const el = document.getElementById(id);
+      const empty = !el.value.trim();
+      setFieldError(id, empty);
+      if (empty) ok = false;
+    });
+
+    const emailEl = document.getElementById('email');
+    const emailOk = /.+@.+\..+/.test(emailEl.value);
+    setFieldError('email', !emailOk);
+    if (!emailOk) ok = false;
+
+    if (selectedMethod === 'card') {
+      ['cardNumber', 'cardExpiry', 'cardCvc'].forEach((id) => {
+        const el = document.getElementById(id);
+        const empty = !el.value.trim();
+        setFieldError(id, empty);
+        if (empty) ok = false;
+      });
+    }
+
+    return ok;
+  }
+
+  const placeOrderBtn = document.getElementById('placeOrderBtn');
+  const formErrorBanner = document.getElementById('formErrorBanner');
+
+  placeOrderBtn.addEventListener('click', () => {
+    const isValid = validate();
+    if (!isValid) {
+      formErrorBanner.classList.add('visible');
+      const firstError = document.querySelector('.field.error');
+      if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    formErrorBanner.classList.remove('visible');
+
+    // Loading state — a real pause while the order "submits", not an
+    // instant cut, matching the loading state ia-map.md requires here.
+    placeOrderBtn.disabled = true;
+    placeOrderBtn.classList.add('loading');
+    const originalLabel = placeOrderBtn.textContent;
+    placeOrderBtn.textContent = 'Placing order…';
+
+    setTimeout(() => {
+      // Order Confirmation needs to show the shade that was actually
+      // confirmed, not just a number (ia-map.md step 8) — so the snapshot
+      // carries the grouped line items, not just a total.
+      const shippingCountryLabel = countrySelect.options[countrySelect.selectedIndex].text;
+      const order = {
+        orderNumber: 'GL-' + Math.floor(100000 + Math.random() * 900000),
+        placedAt: new Date().toISOString(),
+        items: currentGroups,
+        subtotal: subtotal,
+        shipping: shippingFee || 0,
+        total: subtotal + (shippingFee || 0),
+        email: document.getElementById('email').value,
+        name: document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value,
+        country: shippingCountryLabel,
+        method: selectedMethod
+      };
+      try { localStorage.setItem('glowlab_last_order', JSON.stringify(order)); } catch (e) { /* order still passed via redirect below is not possible for a static link, so this best-effort save is what Order Confirmation relies on */ }
+      try { localStorage.removeItem(CART_KEY); } catch (e) { /* cart clearing is best-effort too */ }
+
+      window.location.href = 'my-glowlab-order-confirmation.html';
+    }, 900);
+  });
+
+  renderSummary();
+</script>
+
+</body>
+</html>
